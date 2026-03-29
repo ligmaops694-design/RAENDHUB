@@ -1,0 +1,161 @@
+-- Custom Mobile Shiftlock Replica (iPad Optimized)
+-- Includes "Edit Mode" toggle to lock/unlock dragging
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local TargetGui = (gethui and gethui()) or CoreGui:FindFirstChild("RobloxGui") or LocalPlayer:WaitForChild("PlayerGui")
+
+-- Clean up previous
+if TargetGui:FindFirstChild("CustomShiftlockUI") then
+    TargetGui.CustomShiftlockUI:Destroy()
+end
+
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui", TargetGui)
+ScreenGui.Name = "CustomShiftlockUI"
+ScreenGui.ResetOnSpawn = false
+
+-- The Tiny Drag Toggle Button
+local DragToggleBtn = Instance.new("TextButton", ScreenGui)
+DragToggleBtn.Size = UDim2.new(0, 25, 0, 25)
+DragToggleBtn.Position = UDim2.new(0.8, -15, 0.5, -40) -- Just above the shiftlock button
+DragToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Starts Red (Locked)
+DragToggleBtn.Text = "✥"
+DragToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DragToggleBtn.Font = Enum.Font.GothamBold
+DragToggleBtn.TextSize = 14
+Instance.new("UICorner", DragToggleBtn).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", DragToggleBtn).Thickness = 1.5
+
+-- The Main Shiftlock Button (Matches Official Roblox UI)
+local ShiftlockBtn = Instance.new("ImageButton", ScreenGui)
+ShiftlockBtn.Size = UDim2.new(0, 60, 0, 60)
+ShiftlockBtn.Position = UDim2.new(0.8, -32, 0.5, 0)
+ShiftlockBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ShiftlockBtn.BackgroundTransparency = 0.5
+-- Using standard Lock icon assets
+ShiftlockBtn.Image = "rbxasset://textures/ui/mouseLock_off@2x.png"
+Instance.new("UICorner", ShiftlockBtn).CornerRadius = UDim.new(1, 0)
+
+-- System States
+local isDragMode = false
+local isShiftlockOn = false
+local shiftlockConnection = nil
+
+-- Toggle Drag Mode
+DragToggleBtn.MouseButton1Click:Connect(function()
+    isDragMode = not isDragMode
+    if isDragMode then
+        DragToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 255, 50) -- Green (Draggable)
+        ShiftlockBtn.BackgroundTransparency = 0.2
+    else
+        DragToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Red (Locked)
+        ShiftlockBtn.BackgroundTransparency = 0.5
+    end
+end)
+
+-- Draggable Logic & Shiftlock Activation
+local dragging, dragInput, dragStart, startPos
+
+ShiftlockBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if isDragMode then
+            -- Handle Dragging
+            dragging = true
+            dragStart = input.Position
+            startPos = ShiftlockBtn.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    -- Snap the tiny toggle button to follow the main button
+                    DragToggleBtn.Position = UDim2.new(
+                        ShiftlockBtn.Position.X.Scale, 
+                        ShiftlockBtn.Position.X.Offset + 17, 
+                        ShiftlockBtn.Position.Y.Scale, 
+                        ShiftlockBtn.Position.Y.Offset - 35
+                    )
+                end
+            end)
+        else
+            -- Handle Shiftlock Toggle
+            isShiftlockOn = not isShiftlockOn
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            
+            if isShiftlockOn then
+                ShiftlockBtn.Image = "rbxasset://textures/ui/mouseLock_on@2x.png"
+                if hum then
+                    hum.CameraOffset = Vector3.new(1.75, 0, 0) -- Official Roblox Offset
+                    hum.AutoRotate = false
+                end
+                
+                -- Force Character to face Camera Direction
+                if shiftlockConnection then shiftlockConnection:Disconnect() end
+                shiftlockConnection = RunService.RenderStepped:Connect(function()
+                    if hrp and hum and hum.Health > 0 then
+                        local camLook = Camera.CFrame.LookVector
+                        -- Only rotate horizontally (ignore Y axis so you don't tilt into the floor)
+                        hrp.CFrame = CFrame.lookAt(hrp.Position, hrp.Position + Vector3.new(camLook.X, 0, camLook.Z))
+                    end
+                end)
+            else
+                ShiftlockBtn.Image = "rbxasset://textures/ui/mouseLock_off@2x.png"
+                if hum then
+                    hum.CameraOffset = Vector3.new(0, 0, 0)
+                    hum.AutoRotate = true
+                end
+                if shiftlockConnection then
+                    shiftlockConnection:Disconnect()
+                    shiftlockConnection = nil
+                end
+            end
+        end
+    end
+end)
+
+ShiftlockBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging and isDragMode then
+        local delta = input.Position - dragStart
+        ShiftlockBtn.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+        -- Keep the toggle button attached while dragging
+        DragToggleBtn.Position = UDim2.new(
+            ShiftlockBtn.Position.X.Scale, ShiftlockBtn.Position.X.Offset + 17, 
+            ShiftlockBtn.Position.Y.Scale, ShiftlockBtn.Position.Y.Offset - 35
+        )
+    end
+end)
+
+-- Handle Respawning (Keep Shiftlock state if it was on)
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    if isShiftlockOn then
+        local hum = newChar:WaitForChild("Humanoid", 5)
+        local hrp = newChar:WaitForChild("HumanoidRootPart", 5)
+        if hum then
+            hum.CameraOffset = Vector3.new(1.75, 0, 0)
+            hum.AutoRotate = false
+        end
+        if shiftlockConnection then shiftlockConnection:Disconnect() end
+        shiftlockConnection = RunService.RenderStepped:Connect(function()
+            if hrp and hum and hum.Health > 0 then
+                local camLook = Camera.CFrame.LookVector
+                hrp.CFrame = CFrame.lookAt(hrp.Position, hrp.Position + Vector3.new(camLook.X, 0, camLook.Z))
+            end
+        end)
+    end
+end)
