@@ -1,0 +1,307 @@
+-- [[ RAEND NEON HUB - PERSONAL FRAMEWORK ]] --
+-- UI Modern, Neon, Tab Dinamis, dan Info Popup
+
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- [[ PENGHAPUSAN GUI LAMA (ANTI-DUPLIKAT) ]] --
+if CoreGui:FindFirstChild("RaendNeonHub") then
+    CoreGui.RaendNeonHub:Destroy()
+end
+
+-- [[ TEMA & WARNA NEON ]] --
+local Theme = {
+    BG = Color3.fromRGB(12, 12, 18),
+    TabBG = Color3.fromRGB(20, 20, 28),
+    ItemBG = Color3.fromRGB(25, 25, 35),
+    NeonCyan = Color3.fromRGB(0, 255, 255),
+    NeonPink = Color3.fromRGB(255, 0, 150),
+    TextWhite = Color3.fromRGB(240, 240, 240),
+    TextDim = Color3.fromRGB(150, 150, 160),
+    Transparency = 0.25 -- Efek kaca
+}
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RaendNeonHub"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local function CreateStroke(parent, color, thickness)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color
+    stroke.Thickness = thickness or 1.5
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = parent
+    return stroke
+end
+
+-- [[ 1. FLOATING TOGGLE BUTTON ]] --
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleBtn.Position = UDim2.new(0, 15, 0, 150)
+ToggleBtn.BackgroundColor3 = Theme.BG
+ToggleBtn.BackgroundTransparency = Theme.Transparency
+ToggleBtn.Text = "⚡"
+ToggleBtn.TextColor3 = Theme.NeonCyan
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 22
+ToggleBtn.Draggable = true
+ToggleBtn.Parent = ScreenGui
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+CreateStroke(ToggleBtn, Theme.NeonCyan, 2)
+
+-- [[ 2. MAIN GUI FRAME ]] --
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 480, 0, 320)
+Main.Position = UDim2.new(0.5, -240, 0.5, -160)
+Main.BackgroundColor3 = Theme.BG
+Main.BackgroundTransparency = Theme.Transparency
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+CreateStroke(Main, Theme.NeonPink, 2)
+
+ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Text = "  RAEND HUB FRAMEWORK"
+Title.TextColor3 = Theme.NeonCyan
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 15
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Main
+
+-- [[ 3. SIDEBAR (TABS) ]] --
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Size = UDim2.new(0, 120, 1, -45)
+Sidebar.Position = UDim2.new(0, 10, 0, 35)
+Sidebar.BackgroundTransparency = 1
+Sidebar.ScrollBarThickness = 0
+Sidebar.Parent = Main
+local SidebarLayout = Instance.new("UIListLayout", Sidebar)
+SidebarLayout.Padding = UDim.new(0, 5)
+
+-- [[ 4. CONTENT AREA ]] --
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Size = UDim2.new(1, -145, 1, -45)
+ContentContainer.Position = UDim2.new(0, 135, 0, 35)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = Main
+
+-- [[ 5. INFO POPUP MODAL ]] --
+local InfoModal = Instance.new("Frame")
+InfoModal.Size = UDim2.new(1, 0, 1, 0)
+InfoModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+InfoModal.BackgroundTransparency = 0.4
+InfoModal.Visible = false
+InfoModal.ZIndex = 10
+InfoModal.Parent = Main
+Instance.new("UICorner", InfoModal).CornerRadius = UDim.new(0, 8)
+
+local InfoBox = Instance.new("Frame")
+InfoBox.Size = UDim2.new(0, 250, 0, 150)
+InfoBox.Position = UDim2.new(0.5, -125, 0.5, -75)
+InfoBox.BackgroundColor3 = Theme.ItemBG
+InfoBox.ZIndex = 11
+InfoBox.Parent = InfoModal
+Instance.new("UICorner", InfoBox).CornerRadius = UDim.new(0, 8)
+CreateStroke(InfoBox, Theme.NeonCyan, 2)
+
+local InfoTitle = Instance.new("TextLabel")
+InfoTitle.Size = UDim2.new(1, 0, 0, 30)
+InfoTitle.Text = "SCRIPT INFO"
+InfoTitle.TextColor3 = Theme.NeonCyan
+InfoTitle.BackgroundTransparency = 1
+InfoTitle.Font = Enum.Font.GothamBold
+InfoTitle.TextSize = 14
+InfoTitle.ZIndex = 12
+InfoTitle.Parent = InfoBox
+
+local InfoTextLabel = Instance.new("TextLabel")
+InfoTextLabel.Size = UDim2.new(1, -20, 1, -70)
+InfoTextLabel.Position = UDim2.new(0, 10, 0, 30)
+InfoTextLabel.Text = "Deskripsi di sini..."
+InfoTextLabel.TextColor3 = Theme.TextWhite
+InfoTextLabel.BackgroundTransparency = 1
+InfoTextLabel.Font = Enum.Font.GothamSemibold
+InfoTextLabel.TextSize = 12
+InfoTextLabel.TextWrapped = true
+InfoTextLabel.TextYAlignment = Enum.TextYAlignment.Top
+InfoTextLabel.ZIndex = 12
+InfoTextLabel.Parent = InfoBox
+
+local CloseInfoBtn = Instance.new("TextButton")
+CloseInfoBtn.Size = UDim2.new(0, 100, 0, 25)
+CloseInfoBtn.Position = UDim2.new(0.5, -50, 1, -35)
+CloseInfoBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseInfoBtn.Text = "Tutup"
+CloseInfoBtn.TextColor3 = Theme.TextWhite
+CloseInfoBtn.Font = Enum.Font.GothamBold
+CloseInfoBtn.TextSize = 12
+CloseInfoBtn.ZIndex = 12
+CloseInfoBtn.Parent = InfoBox
+Instance.new("UICorner", CloseInfoBtn).CornerRadius = UDim.new(0, 6)
+CloseInfoBtn.MouseButton1Click:Connect(function() InfoModal.Visible = false end)
+
+-- [[ SISTEM MANAJEMEN TAB & TOMBOL ]] --
+local GUI_System = {
+    Tabs = {},
+    ActiveTab = nil
+}
+
+-- FUNGSI UTAMA: AddButton
+function AddButton(NamaTab, NamaTombol, InfoButton, Callback)
+    -- 1. Buat Tab jika belum ada
+    if not GUI_System.Tabs[NamaTab] then
+        -- Buat Tombol di Sidebar
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Size = UDim2.new(1, 0, 0, 30)
+        TabBtn.BackgroundColor3 = Theme.TabBG
+        TabBtn.BackgroundTransparency = 0.2
+        TabBtn.Text = " " .. NamaTab
+        TabBtn.TextColor3 = Theme.TextDim
+        TabBtn.Font = Enum.Font.GothamBold
+        TabBtn.TextSize = 12
+        TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        TabBtn.Parent = Sidebar
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
+
+        -- Buat Halaman Scroll untuk Tab ini
+        local TabPage = Instance.new("ScrollingFrame")
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.BackgroundTransparency = 1
+        TabPage.ScrollBarThickness = 2
+        TabPage.Visible = false
+        TabPage.Parent = ContentContainer
+        local PageLayout = Instance.new("UIListLayout", TabPage)
+        PageLayout.Padding = UDim.new(0, 6)
+
+        GUI_System.Tabs[NamaTab] = { Button = TabBtn, Page = TabPage, Count = 0 }
+
+        -- Logika klik Tab
+        TabBtn.MouseButton1Click:Connect(function()
+            for name, data in pairs(GUI_System.Tabs) do
+                data.Page.Visible = false
+                data.Button.TextColor3 = Theme.TextDim
+                if data.Button:FindFirstChild("UIStroke") then data.Button.UIStroke:Destroy() end
+            end
+            TabPage.Visible = true
+            TabBtn.TextColor3 = Theme.NeonCyan
+            CreateStroke(TabBtn, Theme.NeonCyan, 1.5)
+            GUI_System.ActiveTab = NamaTab
+        end)
+
+        -- Auto-buka tab pertama yang dibuat
+        if not GUI_System.ActiveTab then
+            TabBtn.TextColor3 = Theme.NeonCyan
+            CreateStroke(TabBtn, Theme.NeonCyan, 1.5)
+            TabPage.Visible = true
+            GUI_System.ActiveTab = NamaTab
+        end
+        Sidebar.CanvasSize = UDim2.new(0, 0, 0, #Sidebar:GetChildren() * 35)
+    end
+
+    local CurrentTab = GUI_System.Tabs[NamaTab]
+    CurrentTab.Count = CurrentTab.Count + 1
+
+    -- 2. Buat Baris Tombol Script
+    local RowFrame = Instance.new("Frame")
+    RowFrame.Size = UDim2.new(1, -10, 0, 35)
+    RowFrame.BackgroundColor3 = Theme.ItemBG
+    RowFrame.BackgroundTransparency = 0.2
+    RowFrame.Parent = CurrentTab.Page
+    Instance.new("UICorner", RowFrame).CornerRadius = UDim.new(0, 6)
+
+    -- Tombol Eksekusi (Kiri - Memenuhi layar)
+    local ExecuteBtn = Instance.new("TextButton")
+    ExecuteBtn.Size = UDim2.new(1, -45, 1, 0) -- Sisakan 45px di kanan untuk tombol Info
+    ExecuteBtn.BackgroundTransparency = 1
+    ExecuteBtn.Text = "  " .. NamaTombol
+    ExecuteBtn.TextColor3 = Theme.TextWhite
+    ExecuteBtn.Font = Enum.Font.GothamSemibold
+    ExecuteBtn.TextSize = 12
+    ExecuteBtn.TextXAlignment = Enum.TextXAlignment.Left
+    ExecuteBtn.Parent = RowFrame
+
+    -- Efek hover neon saat ditekan
+    ExecuteBtn.MouseButton1Click:Connect(function()
+        if Callback then Callback() end
+        -- Animasi klik kecil
+        local str = CreateStroke(RowFrame, Theme.NeonPink, 2)
+        task.delay(0.2, function() str:Destroy() end)
+    end)
+
+    -- Tombol Info (Kanan - Tanda '?')
+    local InfoBtn = Instance.new("TextButton")
+    InfoBtn.Size = UDim2.new(0, 35, 0, 25)
+    InfoBtn.Position = UDim2.new(1, -40, 0, 5)
+    InfoBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    InfoBtn.Text = "?"
+    InfoBtn.TextColor3 = Theme.NeonCyan
+    InfoBtn.Font = Enum.Font.GothamBold
+    InfoBtn.TextSize = 14
+    InfoBtn.Parent = RowFrame
+    Instance.new("UICorner", InfoBtn).CornerRadius = UDim.new(0, 6)
+
+    InfoBtn.MouseButton1Click:Connect(function()
+        InfoTitle.Text = NamaTombol
+        InfoTextLabel.Text = InfoButton
+        InfoModal.Visible = true
+    end)
+
+    CurrentTab.Page.CanvasSize = UDim2.new(0, 0, 0, CurrentTab.Count * 41)
+end
+
+print("Raend Hub Framework Initialized!")
+
+-- ================================================================= --
+-- || TEMPAT KAMU MEMASUKKAN SCRIPT MILIKMU (AREA EDITING)       || --
+-- ================================================================= --
+-- Format: AddButton("Nama Tab", "Nama Tombol", "Deskripsi Info", function() ...scriptmu... end)
+
+-- Contoh Tab 1: Utama
+AddButton("Utama", "Print Halo", "Ini akan mencetak Halo Raend di konsol (F9).", function()
+    print("Halo Raend! Hub kamu bekerja dengan sempurna!")
+end)
+
+AddButton("Utama", "Heal / Full HP", "Mengembalikan darah karaktermu menjadi penuh.", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.Health = char.Humanoid.MaxHealth
+    end
+end)
+
+-- Contoh Tab 2: Movement
+AddButton("Movement", "Speed Boost", "Membuat karaktermu berlari kencang (WalkSpeed 50).", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = 50
+    end
+end)
+
+AddButton("Movement", "High Jump", "Membuat karaktermu melompat sangat tinggi (JumpPower 100).", function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.JumpPower = 100
+        char.Humanoid.UseJumpPower = true
+    end
+end)
+
+-- Contoh Tab 3: Ekstra
+AddButton("Ekstra", "Hapus Tekstur (FPS)", "Menghapus semua tekstur agar game tidak lag di iPad.", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
+        if v:IsA("Texture") or v:IsA("Decal") then v:Destroy() end
+    end
+end)
+
+-- KAMU BISA MENAMBAHKAN RATUSAN SCRIPT DI BAWAH SINI!
+-- AddButton("NamaTab", "NamaTombol", "InfoButton", function() 
+--      -- Paste kode kamu disini
+-- end)
